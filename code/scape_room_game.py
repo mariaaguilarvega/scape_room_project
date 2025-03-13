@@ -158,6 +158,11 @@ INIT_GAME_STATE = {
     "current_user" : ""
 }
 
+def get_current_user_index():
+    for index, user in enumerate(game_state["users"]):
+        if user["name"] == game_state["current_user"]:
+            return index
+    return -1
 
 def new_user():
     """define user dictionary to get name, init time and finish time"""
@@ -213,6 +218,8 @@ def start_game():
 
     display_user_menu(["Let's go!"], "\nYou wake up on a couch and find yourself in a strange house with no windows which you have never been to before. You don't remember why you are here and what had happened before. You feel some unknown danger is approaching and you must get out of the house, NOW!")
     play_room(game_state["current_room"])
+
+    
             
 
 def display_user_menu(options, intro = ""):
@@ -271,15 +278,18 @@ def play_trivia(challenge_data):
 
 
 def finish_game():
-    """Calculate the finish time, print final message to the user and ask if a new user want to start the game."""
-
-    game_state["users"][0]["finish_time"] = datetime.datetime.now() #.strftime("%Y-%m-%d %H:%M%S")
-    game_timing = game_state["users"][0]["finish_time"] - game_state["users"][0]["init_time"]
-    
-    message = f"Congrats {game_state['current_user']}! You escaped the room in {game_timing}!\n\n"
-    message += "Would you like to re-start the game for a new user?"
-
-    new_game_answer = display_user_menu(["yes", "no"], message)
+    user_index = get_current_user_index()
+    game_state["users"][user_index]["finish_time"] = datetime.datetime.now() #.strftime("%Y-%m-%d %H:%M%S")
+    game_timing = game_state["users"][user_index]["finish_time"] - game_state["users"][user_index]["init_time"]
+    clean_terminal()
+    print(f"Congrats {game_state['current_user']}! You escaped the room in {game_timing}!")
+    valid_response = False
+    while not valid_response:
+        new_game_answer = input('Would you like to re-start the game for a new user? Type yes or no: ').strip().lower()
+        if new_game_answer in ['yes', 'no']:
+            valid_response = True
+        else:
+            print("Invalid input. Please type 'yes' or 'no'.")
 
     if new_game_answer == 'yes':
         game_state["current_room"] = game_room
@@ -290,7 +300,7 @@ def finish_game():
         object_relations["dresser"] = [key_d]
         start_game()
     else:
-        display_message("Okay, see you soon. Results found in same directory.")
+        print("Okay, see you soon. Results found in same directory.")
         for user in game_state['users']:
             results = (f"Name: {user['name']}\n"
                         f"Start Time: {user['init_time']}\n"
@@ -298,8 +308,8 @@ def finish_game():
                         f"Duration: {user['finish_time'] - user['init_time']}\n")
             
             with open(f"scape_rooms_results_{user['name']}.txt", 'w') as file:
-                file.write(results + '\n')
-            
+                # Escribe los resultados en el archivo
+                file.write(results + '\n')         
 
 def play_room(room):
     """
