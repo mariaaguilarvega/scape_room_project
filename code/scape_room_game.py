@@ -1,5 +1,6 @@
 import datetime
 import os
+import readchar
 
 # define rooms, doors, items and keys
 
@@ -58,24 +59,44 @@ key_a = {
     "name": "key for door a",
     "type": "key",
     "target": door_a,
+    "challenge": {
+        "question": "Which country did AC/DC originate in?",
+        "options": ["USA", "Australia", "United Kingdom"],
+        "correct_answer": "Australia",
+    }
 }
 
 key_b = {
     "name": "key for door b",
     "type": "key",
     "target": door_b,
+    "challenge": {
+        "question": "What year was the very first model of the iPhone released?",
+        "options": ["2007", "2006", "2005"],
+        "correct_answer": "2007",
+    }
 }
 
 key_c = {
     "name": "key for door c",
     "type": "key",
     "target": door_c,
+    "challenge": {
+        "question": "In which location does the new season 3 of 'The White Lotus' take place?",
+        "options": ["Sicily", "Thailand", "The Maldives"],
+        "correct_answer": "Thailand",
+    }
 }
 
 key_d = {
     "name": "key for door d",
     "type": "key",
     "target": door_d,
+    "challenge": {
+        "question": "Which country has the longest coastline in the world?",
+        "options": ["Australia", "Russia", "Canada"],
+        "correct_answer": "Canada",
+    }
 }
 
 game_room = {
@@ -107,7 +128,6 @@ all_rooms = [game_room, bedroom_1, bedroom_2, living_room, outside]
 all_doors = [door_a, door_b, door_c, door_d]
 
 # define which items/rooms are related
-
 object_relations = {
     "game room": [couch, piano, door_a],
     "bedroom 1" :[door_a, door_b, door_c, queenbed],
@@ -126,12 +146,10 @@ object_relations = {
 }
 
 
-
 # define game state. Do not directly change this dict. 
 # Instead, when a new game starts, make a copy of this
 # dict and use the copy to store gameplay state. This 
 # way you can replay the game multiple times.
-
 INIT_GAME_STATE = {
     "current_room": game_room,
     "keys_collected": [],
@@ -142,9 +160,9 @@ INIT_GAME_STATE = {
 
 
 def new_user():
-    #define user dictionary to get name, init time and finish time
-    
-    name = input("Please enter your name to start the game: ").strip().lower()
+    """define user dictionary to get name, init time and finish time"""
+    clean_terminal()
+    name = input("\n\nPlease enter your name to start the game: ").strip().lower()
     if len(game_state["users"])<1:
         user_data = {
                 "name": name,
@@ -152,7 +170,7 @@ def new_user():
                 "finish_time": ""
             }
         game_state["current_user"] = name
-        print(f"New user {name} has been created. You can start the game.")
+        print(f"\n\nNew user {name} has been created. You can start the game.")
         game_state["users"].append(user_data)
         return 1
     
@@ -193,22 +211,75 @@ def start_game():
         if new_user() ==1:
             break
 
-    print("You wake up on a couch and find yourself in a strange house with no windows which you have never been to before. You don't remember why you are here and what had happened before. You feel some unknown danger is approaching and you must get out of the house, NOW!")
+    display_user_menu(["Let's go!"], "\nYou wake up on a couch and find yourself in a strange house with no windows which you have never been to before. You don't remember why you are here and what had happened before. You feel some unknown danger is approaching and you must get out of the house, NOW!")
     play_room(game_state["current_room"])
+            
 
-#Calculates the finish time, print final message to the user and ask if a new user want to start the game.
-def stop_game():
+def display_user_menu(options, intro = ""):
+    """Display some options for the user to choose, and return the choice"""
+    selected = 0
+
+    while True:
+        clean_terminal()
+
+        # display intro message
+        print("\n\n")
+        print(intro)
+        print("\n")
+
+        if(len(options) > 1):
+            print("Choose one of the following options: ")
+
+        # display all available options
+        for i, option in enumerate(options):
+            prefix = "→ " if i == selected else "  "
+            print(f"{prefix}{option}")
+        
+        # get user's choice
+        key = readchar.readkey()
+        if key == readchar.key.UP and selected > 0:
+            selected -= 1
+        elif key == readchar.key.DOWN and selected < len(options) - 1:
+            selected += 1
+        elif key == readchar.key.ENTER:
+            break
+    
+    clean_terminal()
+    return options[selected]
+
+
+def display_message(msg = ""):
+    """Display a message, and wait for user confirmation"""
+    display_user_menu(["Ok!"], msg)
+
+
+def play_trivia(challenge_data):
+    """Display a trivia question and keep asking till user chooses the right option"""
+    
+    question = challenge_data["question"]
+    options = challenge_data["options"]
+    correct_answer = challenge_data["correct_answer"]
+    
+    msg = "\nTRIVIA CHALLENGE! \n\n\n" +  question
+
+    while True:
+        answer = display_user_menu(options, msg)
+        if answer == correct_answer:
+            return True
+        else:
+            msg = "❌ Wrong answer! Try again." + "\n\n\n" + question
+
+
+def finish_game():
+    """Calculate the finish time, print final message to the user and ask if a new user want to start the game."""
+
     game_state["users"][0]["finish_time"] = datetime.datetime.now() #.strftime("%Y-%m-%d %H:%M%S")
     game_timing = game_state["users"][0]["finish_time"] - game_state["users"][0]["init_time"]
-    clean_terminal()
-    print(f"Congrats {game_state['current_user']}! You escaped the room in {game_timing}!")
-    valid_response = False
-    while not valid_response:
-        new_game_answer = input('Would you like to re-start the game for a new user? Type yes or no: ').strip().lower()
-        if new_game_answer in ['yes', 'no']:
-            valid_response = True
-        else:
-            print("Invalid input. Please type 'yes' or 'no'.")
+    
+    message = f"Congrats {game_state['current_user']}! You escaped the room in {game_timing}!\n\n"
+    message += "Would you like to re-start the game for a new user?"
+
+    new_game_answer = display_user_menu(["yes", "no"], message)
 
     if new_game_answer == 'yes':
         game_state["current_room"] = game_room
@@ -219,7 +290,7 @@ def stop_game():
         object_relations["dresser"] = [key_d]
         start_game()
     else:
-        print("Okay, see you soon. Results found in same directory.")
+        display_message("Okay, see you soon. Results found in same directory.")
         for user in game_state['users']:
             results = (f"Name: {user['name']}\n"
                         f"Start Time: {user['init_time']}\n"
@@ -227,73 +298,7 @@ def stop_game():
                         f"Duration: {user['finish_time'] - user['init_time']}\n")
             
             with open(f"scape_rooms_results_{user['name']}.txt", 'w') as file:
-                # Escribe los resultados en el archivo
                 file.write(results + '\n')
-
-
-def trivia_question_key_a():
-    """Trivia question for Key A."""
-    print("\n🎸 TRIVIA CHALLENGE! 🎸")
-    print("Which country did AC/DC originate in?")
-    print("A. USA")
-    print("B. Australia")
-    print("C. United Kingdom")
-
-    while True:
-        answer = input("Enter A, B, or C: ").strip().upper()
-        if answer == "B":
-            print("✅ Correct! You found the key for Door A.")
-            return True
-        else:
-            print("❌ Wrong answer! Try again.")        
-        
-def trivia_question_key_b():
-    """Trivia question for Key B."""
-    print("\n📱 TRIVIA CHALLENGE! 📱")
-    print("What year was the very first model of the iPhone released?")
-    print("A. 2007")
-    print("B. 2006")
-    print("C. 2005")
-
-    while True:
-        answer = input("Enter A, B, or C: ").strip().upper()
-        if answer == "A":
-            print("✅ Correct! You found the key for Door B.")
-            return True
-        else:
-            print("❌ Wrong answer! Try again.")
-
-def trivia_question_key_c():
-    """Trivia question for Key C."""
-    print("\n📺 TRIVIA CHALLENGE! 📺")
-    print("In which location does the new season 3 of 'The White Lotus' take place?")
-    print("A. Sicily")
-    print("B. Thailand")
-    print("C. The Maldives")
-
-    while True:
-        answer = input("Enter A, B, or C: ").strip().upper()
-        if answer == "B":
-            print("✅ Correct! You found the key for Door C.")
-            return True
-        else:
-            print("❌ Wrong answer! Try again.")
-
-def trivia_question_key_d():
-    """Trivia question for Key D."""
-    print("\n🌍 TRIVIA CHALLENGE! 🌍")
-    print("Which country has the longest coastline in the world?")
-    print("A. Australia")
-    print("B. Russia")
-    print("C. Canada")
-
-    while True:
-        answer = input("Enter A, B, or C: ").strip().upper()
-        if answer == "C":
-            print("✅ Correct! You found the key for Door D.")
-            return True
-        else:
-            print("❌ Wrong answer! Try again.")
             
 
 def play_room(room):
@@ -304,19 +309,21 @@ def play_room(room):
     """
     game_state["current_room"] = room
     if(game_state["current_room"] == game_state["target_room"]):
-        stop_game()
+        finish_game()
     else:
-        print("You are now in " + room["name"])
-        intended_action = input("What would you like to do? Type 'explore' or 'examine'?").strip()
+        msg = (f"You are now in {room["name"]}. What would you like to do?")
+        intended_action = display_user_menu(["explore", "examine"], msg)
+
         if intended_action == "explore":
             explore_room(room)
             play_room(room)
         elif intended_action == "examine":
-            examine_item(input("What would you like to examine?").strip())
+            examine_item(input("\n\nWhat would you like to examine? ").strip())
         else:
             print("Not sure what you mean. Type 'explore' or 'examine'.")
             play_room(room)
         linebreak()
+
 
 def explore_room(room):
     """
@@ -326,7 +333,7 @@ def explore_room(room):
     for item in object_relations[room["name"]]:
       explore_message += str(item["name"]) + ", "
     explore_message = explore_message[:-2]+"."
-    print(explore_message)
+    display_message(explore_message)
 
 
 def get_next_room_of_door(door, current_room):
@@ -361,7 +368,7 @@ def examine_item(item_name):
         if(item["name"] == item_name):     #check if the object examined is in the room
             output = "You examine " + item_name + ". "   
             if(item["type"] == "door"):    #if the object is a door
-                have_key = False   #player doesn´t have key
+                have_key = False   #player doesn't have key
                 for key in game_state["keys_collected"]:  #check if the player has the correct key in inventory
                     if(key["target"] == item):
                         have_key = True
@@ -374,31 +381,31 @@ def examine_item(item_name):
                 if(item["name"] in object_relations and len(object_relations[item["name"]])>0):  #if item exists in object relations, checks if object has anything inside
                     item_found = object_relations[item["name"]].pop()  #take-pop the key
 
-                    if item_found == key_a and trivia_question_key_a(): #if found item is key A and player answer trivia correctly
-                        game_state["keys_collected"].append(item_found)  #add key A to the inventory
-                        output += "You find " + item_found["name"] + "."
-                    elif item_found == key_b and trivia_question_key_b():  #if found item is key B and player answer trivia correctly
-                        game_state["keys_collected"].append(item_found)    #add key B to the inventory
-                        output += "You find " + item_found["name"] + "."
-                    elif item_found == key_c and trivia_question_key_c():  # If Key C is found and trivia is correct
-                        game_state["keys_collected"].append(item_found)  # Add Key C to inventory
-                        output += "You find " + item_found["name"] + "."
-                    elif item_found == key_d and trivia_question_key_d():  # If Key D is found and trivia is correct
-                        game_state["keys_collected"].append(item_found)  # Add Key D to inventory
-                        output += "You find " + item_found["name"] + "."
+                    if item_found["challenge"]:
+                        play_trivia(item_found["challenge"]) #play challenge to collect key
+                        output = "Correct! "
+
+                    game_state["keys_collected"].append(item_found)  #add key to the inventory
+                    output += f"You found {item_found["name"]}!"
+
                    
                 else:
                     output += "There isn't anything interesting about it."
-            print(output)
+            display_message(output)
             break
             
     if(output is None):  #an error message in case the item was not found in the room
-        print("The item you requested is not found in the current room.")
+        display_message("The item you requested is not found in the current room.")
     
-    if(next_room and input("Do you want to go to the next room? Enter 'yes' or 'no'").strip() == 'yes'): #if a door was unlocked and the player wants to proceed, move to the next room
-        play_room(next_room)
+    if next_room:
+        answer = display_user_menu(["yes", "no"], "Do you want to go to the next room?")
+        if answer == "yes":
+            play_room(next_room) #if a door was unlocked and the player wants to proceed, move to the next room
+        else:
+            play_room(current_room) #stay in the current room, if player doesn't want to move
+
     else:
-        play_room(current_room) #stay in the current room, if player doesn´t want to move
+        play_room(current_room) #stay in the current room
 
 
 
