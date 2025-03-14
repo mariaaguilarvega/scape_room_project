@@ -234,9 +234,6 @@ def display_user_menu(options, intro = ""):
         print(intro)
         print("\n")
 
-        if(len(options) > 1):
-            print("Choose one of the following options: ")
-
         # display all available options
         for i, option in enumerate(options):
             prefix = "→ " if i == selected else "  "
@@ -281,17 +278,13 @@ def finish_game():
     user_index = get_current_user_index()
     game_state["users"][user_index]["finish_time"] = datetime.datetime.now() #.strftime("%Y-%m-%d %H:%M%S")
     game_timing = game_state["users"][user_index]["finish_time"] - game_state["users"][user_index]["init_time"]
-    clean_terminal()
-    print(f"Congrats {game_state['current_user']}! You escaped the room in {game_timing}!")
-    valid_response = False
-    while not valid_response:
-        new_game_answer = input('Would you like to re-start the game for a new user? Type yes or no: ').strip().lower()
-        if new_game_answer in ['yes', 'no']:
-            valid_response = True
-        else:
-            print("Invalid input. Please type 'yes' or 'no'.")
+    
+    message = f"Congrats {game_state['current_user']}! You escaped the room in {game_timing}!\n\n"
+    message += "Would you like to re-start the game for a new user?"
 
-    if new_game_answer == 'yes':
+    new_game_answer = display_user_menu(["Yes", "No"], message)
+
+    if new_game_answer == 'Yes':
         game_state["current_room"] = game_room
         game_state["keys_collected"] = []
         object_relations["piano"] = [key_a]
@@ -300,7 +293,7 @@ def finish_game():
         object_relations["dresser"] = [key_d]
         start_game()
     else:
-        print("Okay, see you soon. Results found in same directory.")
+        display_message("Okay, see you soon. Results found in same directory.")
         for user in game_state['users']:
             results = (f"Name: {user['name']}\n"
                         f"Start Time: {user['init_time']}\n"
@@ -322,12 +315,12 @@ def play_room(room):
         finish_game()
     else:
         msg = (f"You are now in {room["name"]}. What would you like to do?")
-        intended_action = display_user_menu(["explore", "examine"], msg)
+        intended_action = display_user_menu(["Explore", "Examine"], msg)
 
-        if intended_action == "explore":
+        if intended_action == "Explore":
             explore_room(room)
             play_room(room)
-        elif intended_action == "examine":
+        elif intended_action == "Examine":
             examine_item(input("\n\nWhat would you like to examine? ").strip())
         else:
             print("Not sure what you mean. Type 'explore' or 'examine'.")
@@ -408,8 +401,8 @@ def examine_item(item_name):
         display_message("The item you requested is not found in the current room.")
     
     if next_room:
-        answer = display_user_menu(["yes", "no"], "Do you want to go to the next room?")
-        if answer == "yes":
+        answer = display_user_menu(["Yes", "No"], "Do you want to go to the next room?")
+        if answer == "Yes":
             play_room(next_room) #if a door was unlocked and the player wants to proceed, move to the next room
         else:
             play_room(current_room) #stay in the current room, if player doesn't want to move
