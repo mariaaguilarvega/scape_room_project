@@ -164,36 +164,27 @@ def get_current_user_index():
             return index
     return -1
 
+
 def new_user():
     """define user dictionary to get name, init time and finish time"""
     clean_terminal()
     name = input("\n\nPlease enter your name to start the game: ").strip().lower()
-    if len(game_state["users"])<1:
-        user_data = {
-                "name": name,
-                "init_time": datetime.datetime.now(), #.strftime("%Y-%m-%d %H:%M%S"),
-                "finish_time": ""
-            }
-        game_state["current_user"] = name
-        print(f"\n\nNew user {name} has been created. You can start the game.")
-        game_state["users"].append(user_data)
-        return 1
-    
-    else:    
-        for user in game_state["users"]:
-            if user["name"] == name:
-                print(f"User {name} already exits. Please, enter a new name.")
-                return 0
-            else:   
-                user_data = {
-                    "name": name,
-                    "init_time": datetime.datetime.now(), #.strftime("%Y-%m-%d %H:%M%S"),
-                    "finish_time": ""
-                }
-                game_state["current_user"] = name
-                print(f"New user {name} has been created. You can start the game.")
-                game_state["users"].append(user_data)
-                return 1
+
+    # check if user name exists
+    for user in game_state["users"]:
+        if user["name"] == name:
+            display_message(f"User {name} already exits. Please, enter a new name.")
+            return 0
+
+    # create user
+    user_data = {
+            "name": name,
+            "init_time": datetime.datetime.now(), #.strftime("%Y-%m-%d %H:%M%S"),
+            "finish_time": ""
+        }
+    game_state["current_user"] = name
+    game_state["users"].append(user_data)
+    return 1
 
 
 def linebreak():
