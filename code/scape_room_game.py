@@ -178,6 +178,10 @@ def new_user():
             display_message(f"User {name} already exits. Please, enter a new name.")
             return 0
 
+    # cheatcode :)
+    if name.startswith("cheater"):
+        object_relations["door a"] = [game_room, outside]
+
     # create user
     user_data = {
             "name": name,
