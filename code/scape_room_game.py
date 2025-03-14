@@ -1,5 +1,7 @@
 import datetime
 import os
+import csv
+import matplotlib.pyplot as plt
 import readchar
 
 # define rooms, doors, items and keys
@@ -179,7 +181,7 @@ def new_user():
     # create user
     user_data = {
             "name": name,
-            "init_time": datetime.datetime.now(), #.strftime("%Y-%m-%d %H:%M%S"),
+            "init_time": datetime.datetime.now(),
             "finish_time": ""
         }
     game_state["current_user"] = name
@@ -267,7 +269,7 @@ def play_trivia(challenge_data):
 
 def finish_game():
     user_index = get_current_user_index()
-    game_state["users"][user_index]["finish_time"] = datetime.datetime.now() #.strftime("%Y-%m-%d %H:%M%S")
+    game_state["users"][user_index]["finish_time"] = datetime.datetime.now()
     game_timing = game_state["users"][user_index]["finish_time"] - game_state["users"][user_index]["init_time"]
     
     message = f"Congrats {game_state['current_user']}! You escaped the room in {game_timing}!\n\n"
@@ -284,16 +286,66 @@ def finish_game():
         object_relations["dresser"] = [key_d]
         start_game()
     else:
-        display_message("Okay, see you soon. Results found in same directory.")
+        display_message("Okay, see you soon. Results will be stored in the same directory.")
+        save_results("scape_rooms_results.csv")
+        create_bar_chart_from_csv("scape_rooms_results.csv", "scape_rooms_results.png")
+
+
+
+def save_results(destination_csv_file):
+    """Save results in a CSV file"""
+    # Define the header for the CSV file
+    header = ['player_name', 'start_time', 'finish_time', 'duration']
+
+    # Open the CSV file in write mode
+    with open(destination_csv_file, 'w', newline='') as file:
+        writer = csv.writer(file)
+        
+        # Write the header
+        writer.writerow(header)
+        
+        # Write the data for each user
         for user in game_state['users']:
-            results = (f"Name: {user['name']}\n"
-                        f"Start Time: {user['init_time']}\n"
-                        f"Finish Time: {user['finish_time']}\n"
-                        f"Duration: {user['finish_time'] - user['init_time']}\n")
-            
-            with open(f"scape_rooms_results_{user['name']}.txt", 'w') as file:
-                # Escribe los resultados en el archivo
-                file.write(results + '\n')         
+            duration = user['finish_time'] - user['init_time']
+            writer.writerow([user['name'], user['init_time'], user['finish_time'], duration])
+
+
+
+def create_bar_chart_from_csv(csv_file, png_file):
+    """Create a bar chart from a source csv file"""
+    # Read the CSV data
+    names = []
+    durations = []
+    with open(csv_file, 'r') as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            names.append(row['player_name'])
+            # Convert the 'duration' string to a timedelta object
+            duration_str = row['duration']
+            hours, minutes, seconds = map(float, duration_str.split(':'))
+            # Convert the duration into total seconds
+            duration_in_seconds = datetime.timedelta(hours=hours, minutes=minutes, seconds=seconds).total_seconds()
+            durations.append(duration_in_seconds)
+
+    # Create the bar chart
+    plt.bar(names, durations, color='skyblue')
+
+    # Add titles and labels
+    plt.title('Escape Room Duration per Player')
+    plt.xlabel('Player Name')
+    plt.ylabel('Duration (seconds)')
+
+    # Rotate player names for better readability
+    plt.xticks(rotation=45, ha='right')
+
+    # Save the chart as a PNG file
+    plt.tight_layout()
+    plt.savefig(png_file)  # Save to the provided path
+
+    # Show the chart
+    plt.show()
+
+
 
 def play_room(room):
     """
