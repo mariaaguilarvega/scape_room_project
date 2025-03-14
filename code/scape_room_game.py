@@ -2,6 +2,7 @@ import datetime
 import os
 import csv
 import matplotlib.pyplot as plt
+import numpy as np
 import readchar
 
 # define rooms, doors, items and keys
@@ -331,8 +332,14 @@ def create_bar_chart_from_csv(csv_file, png_file):
             duration_in_seconds = datetime.timedelta(hours=hours, minutes=minutes, seconds=seconds).total_seconds()
             durations.append(duration_in_seconds)
 
+    # Calculate the mean duration
+    mean_duration = np.mean(durations)
+
     # Create the bar chart
     plt.bar(names, durations, color='skyblue')
+
+    # Add a line for the mean
+    plt.axhline(y=mean_duration, color='r', linestyle='--', label=f'Mean: {mean_duration:.2f} sec')
 
     # Add titles and labels
     plt.title('Escape Room Duration per Player')
@@ -341,6 +348,9 @@ def create_bar_chart_from_csv(csv_file, png_file):
 
     # Rotate player names for better readability
     plt.xticks(rotation=45, ha='right')
+
+    # Show the mean label in the legend
+    plt.legend()
 
     # Save the chart as a PNG file
     plt.tight_layout()
